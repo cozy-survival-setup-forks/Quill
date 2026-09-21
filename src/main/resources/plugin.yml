@@ -1,0 +1,77 @@
+name: Quill
+version: '${version}'
+main: dev.quill.QuillPlugin
+api-version: '1.21'
+description: Local chat, chat formats and a filter for advertising and hate
+softdepend:
+  - PlaceholderAPI
+  - Spectrum
+  - Essentials
+  - LuckPerms
+
+commands:
+  quill:
+    description: Quill admin tools
+    usage: /<command> reload | spy | local | mutechat | clearchat | filter test <text> | warnings <player>
+  staffchat:
+    description: Talk to staff, or switch staff chat on and off
+    aliases: [sc]
+    usage: /<command> [message]
+    permission: quill.staffchat
+  chattoggle:
+    description: Hide or show public chat for yourself
+    aliases: [togglechat]
+    usage: /<command>
+
+permissions:
+  quill.admin:
+    description: Reload, spy, mute and clear chat, test the filter, see and clear warnings
+    default: op
+  quill.staffchat:
+    description: Use staff chat, and read it
+    default: op
+  quill.chat.global:
+    description: Start a message with the global prefix to reach everyone
+    default: op
+  quill.chat.item:
+    description: Show the item in hand with [item]
+    default: true
+  quill.chat.inventory:
+    description: Show the inventory with [inv]
+    default: true
+  quill.chat.ender:
+    description: Show the ender chest with [ender]
+    default: true
+  quill.chat.mention:
+    description: Mention players with @name
+    default: true
+  quill.links:
+    description: Post links and domains
+    default: op
+  quill.filter.alerts:
+    description: See who the filter stopped
+    default: op
+  quill.bypass.filter:
+    description: Nothing is filtered (quill.bypass.filter.<category> for one category)
+    default: op
+  quill.bypass.spam:
+    description: No cooldown, repeat or caps checks
+    default: op
+  quill.bypass.chatmuted:
+    description: Talk while chat is muted
+    default: op
+  quill.bypass.chattoggle:
+    description: Messages reach players who hid chat
+    default: false
+  quill.bypass.chatclear:
+    description: Not affected by /quill clearchat
+    default: op
+  quill.bypass.ignore:
+    description: Messages reach players who ignore you
+    default: false
+  quill.ignore.mentions:
+    description: No sound or notice when mentioned
+    default: false
+  quill.announcements.bypass:
+    description: Does not get the announcements
+    default: false

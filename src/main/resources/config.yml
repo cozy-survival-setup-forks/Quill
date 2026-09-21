@@ -1,0 +1,85 @@
+# Quill config.yml
+# Texts use MiniMessage (<red>text</red>), and the old & codes work too. The filter is in filter.yml and terms.yml,
+# the messages players and staff see are in messages.yml.
+#
+# Tags in a format: <name> the player name (Spectrum's gradient when Spectrum is there), <prefix> <suffix>
+# (from the placeholders below), <message>, <player> the plain name, <displayname>, <world>.
+# Any PlaceholderAPI placeholder (%something%) can be used too.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Local chat: a message is heard by the players within `radius` blocks in the same world. Start a message with the
+# global prefix to reach everyone (needs quill.chat.global). Staff with /quill spy hear everything, in a spy format.
+local:
+  radius: 64
+  global-prefix: "!"
+  # A short note above the hotbar when nobody was close enough to hear
+  hint-when-alone: true
+  # Worlds where everything is global
+  ignore-worlds: []
+
+# Where the name and prefix come from. If a placeholder gives nothing (its plugin is not installed) the display name is used.
+name: "%spectrum_name%"
+prefix: "%luckperms_prefix%"
+suffix: "%luckperms_suffix%"
+
+# What shows when a name is hovered, and what happens on click. {player} is the name.
+hover:
+  lines:
+    - "<gray>Name: <white>{player}"
+    - "<dark_gray>Click to message"
+  click: "/msg {player} "
+
+# ---------------------------------------------------------------------------------------------------------------
+# Formats. The one with the highest weight that the player has the permission for is used. `local` is for
+# messages heard nearby, `global` for the rest. Add more with any permission, for example one per rank.
+formats:
+  default:
+    weight: 0
+    local: "<dark_gray>[<green>L</green>]</dark_gray> <prefix><name><suffix><dark_gray> » </dark_gray><white><message>"
+    global: "<dark_gray>[<gold>G</gold>]</dark_gray> <prefix><name><suffix><dark_gray> » </dark_gray><white><message>"
+  # admin:
+  #   permission: quill.format.admin
+  #   weight: 10
+  #   local: "<dark_gray>[<green>L</green>]</dark_gray> <red>Admin</red> <name><dark_gray> » </dark_gray><white><message>"
+  #   global: "<dark_gray>[<gold>G</gold>]</dark_gray> <red>Admin</red> <name><dark_gray> » </dark_gray><white><message>"
+
+# What staff hear from a player out of range
+spy-format: "<dark_gray>[<gray>Spy</gray>]</dark_gray> <gray><name>: <message>"
+
+# Staff chat: /staffchat <message>, /staffchat to switch it on, or start a message with the prefix
+staff:
+  prefix: "#"
+  format: "<dark_gray>[<red>Staff</red>]</dark_gray> <name><dark_gray> » </dark_gray><white><message>"
+
+# ---------------------------------------------------------------------------------------------------------------
+mentions:
+  enabled: true
+  # <player> is the name that was mentioned
+  format: "<yellow>@<player></yellow>"
+  sound: block.note_block.pling
+  actionbar: "<yellow><player> <white>mentioned you"
+
+# Words in a message that turn into the thing they name
+items:
+  enabled: true
+  item-tokens: ["[item]", "[i]", "[hand]"]
+  inventory-tokens: ["[inv]", "[inventory]"]
+  ender-tokens: ["[ender]", "[enderchest]"]
+  inventory-format: "<aqua>[<player>'s Inventory]"
+  ender-format: "<light_purple>[<player>'s Ender Chest]"
+  # How long a shown inventory can be opened
+  cache-seconds: 120
+
+links:
+  # Links that got through the filter become clickable
+  clickable: true
+
+# ---------------------------------------------------------------------------------------------------------------
+announcements:
+  enabled: false
+  interval-seconds: 300
+  random: false
+  # Each entry is a list of lines
+  list:
+    - - "<gold>Tip: <white>start a message with <yellow>!</yellow> to talk to everyone, not only the players nearby."
+    - - "<gold>Tip: <white>hold an item and type <yellow>[item]</yellow> to show it in chat."

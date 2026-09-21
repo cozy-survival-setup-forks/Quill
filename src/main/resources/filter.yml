@@ -1,0 +1,115 @@
+# Quill filter.yml
+# The chat filter. What counts as a bad word is in terms.yml, this file is about advertising, spam and what happens
+# to a player who is stopped. A stopped message is never shown to anyone, and the player is warned.
+#
+# Permissions
+#   quill.bypass.filter                everything below
+#   quill.bypass.filter.<category>     one category: racism, homophobia, ableism, hate, threats, sexual, profanity, advertising
+#   quill.links                        may post links and domains (server addresses and ad phrases are still stopped)
+#   quill.bypass.spam                  no cooldown, repeat or caps checks
+#   quill.filter.alerts                sees the alert when somebody is stopped
+
+enabled: true
+
+advertising:
+  enabled: true
+  # Server addresses like 12.34.56.78 or 12.34.56.78:25565
+  block-ips: true
+  # Links and domains are stopped unless the host is one of these (subdomains count: i.imgur.com)
+  allowed-domains:
+    - minecraft.net
+    - minecraft.wiki
+    - mojang.com
+    - youtube.com
+    - youtu.be
+    - twitch.tv
+    - imgur.com
+    - gyazo.com
+    - prnt.sc
+    - tenor.com
+    - giphy.com
+    - github.com
+    - namemc.com
+    - planetminecraft.com
+    - curseforge.com
+    - modrinth.com
+    - papermc.io
+    - spigotmc.org
+    - wikipedia.org
+    - google.com
+  # A bare "name.ending" only counts when the ending is one of these and the name is at least 3 letters long.
+  # Text like "ok.so" or "yes.no" is therefore never a link. A link with https:// or www. always counts.
+  tlds:
+    - com
+    - net
+    - org
+    - gg
+    - io
+    - xyz
+    - fun
+    - club
+    - top
+    - pro
+    - shop
+    - store
+    - online
+    - site
+    - cc
+    - tk
+    - ml
+    - ga
+    - cf
+    - gq
+    - info
+    - biz
+    - live
+    - world
+    - games
+    - host
+    - lol
+    - eu
+    - us
+    - pw
+    - ws
+  # Regular expressions, on the message in lowercase
+  phrases:
+    - '\b(?:join|visit|come\s+to|check\s+out|try|play\s+on)\s+(?:my|our|the\s+best)\s+(?:new\s+|cool\s+|free\s+)?(?:mc\s+|minecraft\s+)?(?:server|realm|smp)\b'
+    - '\b(?:sub|subscribe)\s+(?:to\s+)?my\s+(?:channel|youtube|yt)\b'
+    - '\bfollow\s+me\s+on\s+(?:twitch|youtube|tiktok|instagram)\b'
+    - '\bfree\s+(?:rank|robux|nitro|vbucks)\s+(?:at|on|here|in)\b'
+    - '\bbuy\s+(?:cheap\s+)?(?:coins|ranks?)\s+(?:at|on|from)\b'
+
+# Not counted as warnings: the message is just stopped with a short note.
+spam:
+  cooldown:
+    enabled: true
+    seconds: 2
+  repeat:
+    enabled: true
+    # The same message again within this many seconds
+    seconds: 15
+  caps:
+    enabled: true
+    # Only messages with at least this many letters, and only when this share of them is in capitals
+    min-letters: 12
+    percent: 75
+
+warnings:
+  # A warning is forgotten this many minutes after the last one
+  decay-minutes: 60
+  # Shown to the player as "warning 2/3"
+  max: 3
+  # Tell staff with quill.filter.alerts. Hover the alert to read the message.
+  alert-staff: true
+  # Write every stopped message to plugins/Quill/filter.log
+  log: true
+  # What happens at a number of warnings. Commands run from the console, %player% and %category% are filled in.
+  # `repeat: true` runs it for every warning from that number on. Nothing is set up by default.
+  escalation: []
+  #  - at: 3
+  #    commands:
+  #      - "mute %player% 10m Chat filter: %category%"
+  #  - at: 6
+  #    repeat: true
+  #    commands:
+  #      - "tempban %player% 1h Chat filter"

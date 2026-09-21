@@ -1,0 +1,198 @@
+# Quill terms.yml
+# What the filter looks for. Everything here is a plain list, so adding or removing a word is one line.
+#
+# How words are matched, so the lists stay precise:
+#   words      whole words only. "class" and "Scunthorpe" can never trigger a word that is only part of them.
+#              Write the forms you want stopped (plurals too), one word per entry. Upper or lower case, accents,
+#              l33t (n1gger), look-alike letters from other alphabets, stretched letters (niiigger), dots or dashes
+#              between letters (n.i.g.g.e.r) and masked letters (f*ck) are all seen through automatically.
+#   contains   long words that are also stopped inside a longer one ("sandnigger"). Only for words that can never
+#              be part of an innocent word, and always at least 5 letters. The safe-words below are the exceptions.
+#   phrases    several words in a row, in any spacing. Write them plainly.
+#   patterns   regular expressions on the message in lowercase, for phrases with variations.
+#
+# safe-words     never stopped when found inside another word. Ends with * to cover every ending (snigger*).
+# safe-phrases   a phrase that is blanked out before anything is looked for, for words with an innocent meaning.
+#
+# A category with enabled: false is not used at all. Turn a category on by changing it to true.
+# Players with quill.bypass.filter.<category> (or quill.bypass.filter) may say what a category stops.
+
+categories:
+  racism:
+    enabled: true
+    label: racist language
+    words:
+      - nigger
+      - niggers
+      - nigga
+      - niggas
+      - niggah
+      - niggahs
+      - niggaz
+      - nigguh
+      - niggur
+      - niggr
+      - niggerz
+      - chink
+      - chinks
+      - gook
+      - gooks
+      - spic
+      - spics
+      - spick
+      - spicks
+      - wetback
+      - wetbacks
+      - beaner
+      - beaners
+      - kike
+      - kikes
+      - coon
+      - coons
+      - jigaboo
+      - jigaboos
+      - darkie
+      - darkies
+      - porchmonkey
+      - porchmonkeys
+      - towelhead
+      - towelheads
+      - raghead
+      - ragheads
+      - zipperhead
+      - zipperheads
+      - paki
+      - pakis
+      - kaffir
+      - kaffirs
+      - injun
+      - injuns
+    contains:
+      - nigger
+
+  homophobia:
+    enabled: true
+    label: homophobic language
+    words:
+      - fag
+      - fags
+      - faggot
+      - faggots
+      - faggy
+      - dyke
+      - dykes
+      - tranny
+      - trannies
+      - shemale
+      - shemales
+    contains:
+      - faggot
+
+  ableism:
+    enabled: true
+    label: ableist language
+    words:
+      - retard
+      - retards
+      - retarded
+      - tard
+      - tards
+      - spaz
+      - spazz
+      - spazzes
+
+  hate:
+    enabled: true
+    label: hate speech
+    phrases:
+      - white power
+      - heil hitler
+      - sieg heil
+      - hitler did nothing wrong
+      - hitler was right
+      - gas the jews
+      - death to jews
+      - death to all jews
+      - white pride worldwide
+      - go back to africa
+      - go back to your country
+    patterns:
+      - '\b(?:kill|gas|hang|lynch|burn|exterminate|shoot)\s+(?:all\s+)?(?:the\s+)?(?:jews|blacks|niggers|niggas|muslims|gays|fags|faggots|trannies|asians|mexicans|arabs|chinks)\b'
+      - '\b(?:all\s+)?(?:jews|niggers|niggas|faggots|fags|muslims)\s+(?:should|must|need\s+to|deserve\s+to)\s+(?:die|burn|hang|be\s+killed|be\s+gassed)\b'
+
+  threats:
+    enabled: true
+    label: encouraging self-harm
+    words:
+      - kys
+    patterns:
+      - '(?<!don''t )(?<!dont )(?<!do not )(?<!never )(?<!not )(?<!won''t )\b(?:go\s+)?(?:kill|hang|neck)\s+(?:your\s*self|ur\s*self|yourself|urself)\b'
+      - '\b(?:i\s+)?hope\s+(?:you|u)\s+(?:die|get\s+cancer|get\s+aids|get\s+raped|burn\s+in\s+hell)\b'
+      - '\bgo\s+commit\s+suicide\b'
+      - '\bslit\s+your\s+wrists\b'
+
+  sexual:
+    enabled: false
+    label: sexual content
+    words:
+      - porn
+      - pornhub
+      - nudes
+      - horny
+      - dickpic
+      - dickpics
+    phrases:
+      - send nudes
+      - send me nudes
+
+  profanity:
+    enabled: false
+    label: profanity
+    words:
+      - fuck
+      - fucks
+      - fucked
+      - fucker
+      - fuckers
+      - fucking
+      - motherfucker
+      - motherfuckers
+      - shit
+      - shits
+      - shitty
+      - bullshit
+      - bitch
+      - bitches
+      - asshole
+      - assholes
+      - cunt
+      - cunts
+      - dick
+      - dicks
+      - dickhead
+      - pussy
+      - whore
+      - whores
+      - slut
+      - sluts
+      - bastard
+      - bastards
+      - wanker
+      - wankers
+      - twat
+
+# Real words that contain a listed one inside them.
+safe-words:
+  - niggardly
+  - niggard*
+  - snigger*
+
+# Phrases where a listed word means something else.
+safe-phrases:
+  - chink in
+  - chink of
+  - maine coon
+  - maine coons
+  - coon rapids
+  - spic and span
+  - spick and span

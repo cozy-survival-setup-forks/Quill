@@ -1,0 +1,42 @@
+# Quill messages.yml
+# MiniMessage, and & codes work. <placeholders> are filled in. An empty message is not sent, so any can be turned off.
+
+prefix: "<gradient:#7aa2ff:#b48cff><bold>QUILL</bold></gradient> <dark_gray>» "
+
+no-permission: "<red>You do not have permission."
+players-only: "<red>Only players can do that."
+reloaded: "<white>Reloaded every file."
+player-not-found: "<red><player> has not played here."
+
+usage:
+  - "{prefix}<white>/quill <gray>reload | spy | local | mutechat | clearchat | filter test <text> | warnings <player> | clearwarnings <player>"
+usage-filter: "<white>/quill filter test <text> <gray>▸ see what the filter does with a message"
+
+# The filter
+filter-warning: "<red>Your message was not sent: <white><category><red>. Warning <white><count>/<max><red>."
+filter-actionbar: "<red>⚠ Message blocked"
+filter-alert: "<dark_gray>[<red>Filter</red>]</dark_gray> <white><player> <gray>was stopped for <white><category> <dark_gray>(<count>/<max>)"
+filter-test-clean: "{prefix}<green>That message would be sent."
+filter-test-stopped: "{prefix}<red>Stopped: <white><category> <gray>(<rule>, matched <white><matched><gray>)"
+warnings-of: "<white><player> <gray>has <white><count>/<max> <gray>warnings."
+warnings-cleared: "<white>Cleared the warnings of <player>."
+
+spam-cooldown: "<red>You are chatting too fast."
+spam-repeat: "<red>You already said that."
+spam-caps: "<red>Please do not shout."
+
+# Chat controls
+chat-muted: "<red>Chat is muted right now."
+chat-muted-broadcast: "<red>Chat has been muted by staff."
+chat-unmuted-broadcast: "<green>Chat is open again."
+chat-cleared: "<gray>Chat was cleared by <white><player><gray>."
+chat-hidden: "<white>Public chat is hidden. Type <yellow>/chattoggle</yellow> to see it again."
+chat-shown: "<white>Public chat is back."
+spy-on: "<white>You now hear all local chat."
+spy-off: "<white>You no longer hear chat out of range."
+local-on: "<white>Local chat is <green>on<white>."
+local-off: "<white>Local chat is <red>off<white>, everyone hears everyone."
+staffchat-on: "<white>Staff chat is <green>on<white>. Everything you type goes to staff."
+staffchat-off: "<white>Staff chat is <red>off<white>."
+nobody-heard: "<gray>Nobody is close enough to hear you. Start with <white>!</white> to reach everyone."
+view-expired: "<red>That has expired."
