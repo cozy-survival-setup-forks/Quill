@@ -55,7 +55,8 @@ public final class Snapshots {
         return out;
     }
 
-    private void sweep() {
+    /** Drops expired snapshots. Also called on its own timer so they do not just sit in memory between uses. */
+    public void sweep() {
         long now = System.currentTimeMillis();
         snaps.values().removeIf(s -> s.expires < now);
     }

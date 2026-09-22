@@ -22,7 +22,7 @@ public final class QuillExpansion extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getAuthor() {
-        return "Quill";
+        return "Groovified";
     }
 
     @Override

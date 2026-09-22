@@ -2,6 +2,7 @@ name: Quill
 version: '${version}'
 main: dev.quill.QuillPlugin
 api-version: '1.21'
+authors: [Groovified]
 description: Local chat, chat formats and a filter for advertising and hate
 softdepend:
   - PlaceholderAPI

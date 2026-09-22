@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public final class WordMatcher {
 
     private static final String KEEP_AT_EDGES = "@$*#%";
-    private static final String SEPARATORS = "._-|/\\,~^:;";
+    private static final String SEPARATORS = "._-|/\\,~^:;·•‧∙⋅";
     private static final String WILDCARDS = "*#%?";
 
     private final Terms terms;

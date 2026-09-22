@@ -55,7 +55,7 @@ class FilterTest {
     void slursInTheUsualDisguises() {
         for (String t : new String[]{"nigger", "NIGGER", "n1gger", "nigg3r", "n i g g e r", "n.i.g.g.e.r", "n-i-g-g-e-r", "niiigger",
                 "nïgger", "ｎｉｇｇｅｒ", "nіgger", "n*gger", "*nigger*", "you nigger!", "sandnigger", "n​igger", "niggеr",
-                "u r a nigger lol", "NiGgEr,", "(nigger)", "niggers", "n1gg4", "nigga"}) {
+                "u r a nigger lol", "NiGgEr,", "(nigger)", "niggers", "n1gg4", "nigga", "n·i·g·g·e·r", "n•i•g•g•e•r"}) {
             stopped("racism", t);
         }
         for (String t : new String[]{"faggot", "f4ggot", "you fag", "f a g g o t", "fagg0ts", "dyke", "tranny", "trannies"}) {

@@ -25,7 +25,8 @@ public final class Hooks {
         if (essentials != null && essentials.isEnabled()) {
             try {
                 getUser = essentials.getClass().getMethod("getUser", Player.class);
-                Class<?> iUser = Class.forName("net.ess3.api.IUser", true, essentials.getClass().getClassLoader());
+                // the User class implements com.earth2me.essentials.IUser, not the net.ess3.api one
+                Class<?> iUser = Class.forName("com.earth2me.essentials.IUser", true, essentials.getClass().getClassLoader());
                 isIgnored = getUser.getReturnType().getMethod("isIgnoredPlayer", iUser);
             } catch (ReflectiveOperationException | LinkageError e) {
                 getUser = null;

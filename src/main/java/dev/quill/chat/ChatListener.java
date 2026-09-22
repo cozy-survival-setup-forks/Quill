@@ -54,6 +54,9 @@ public final class ChatListener implements Listener {
     private static final Pattern LINK = Pattern.compile("(?i)\\b(?:https?://|www\\.)[^\\s<>\"']+");
 
     private final QuillPlugin plugin;
+    // the @mention pattern lists every online name, so it only needs rebuilding when someone joins or quits
+    private volatile Pattern mentionPattern;
+    private volatile boolean mentionsDirty = true;
 
     public ChatListener(QuillPlugin plugin) {
         this.plugin = plugin;
@@ -326,6 +329,20 @@ public final class ChatListener implements Listener {
     }
 
     private void mentionSpans(Player p, Settings s, String text, List<Rich.Span> spans, Set<Player> mentioned) {
+        Pattern pattern = mentionPattern();
+        if (pattern == null) return;
+        Matcher m = pattern.matcher(text);
+        while (m.find()) {
+            Player target = Bukkit.getPlayerExact(m.group(1));
+            if (target == null) continue;
+            spans.add(new Rich.Span(m.start(), m.end(), Text.parse(s.mentionFormat, Placeholder.unparsed("player", target.getName()))));
+            if (!target.equals(p)) mentioned.add(target);
+        }
+    }
+
+    /** Names change only on join or quit, so the pattern is rebuilt then instead of once per message. */
+    private Pattern mentionPattern() {
+        if (!mentionsDirty) return mentionPattern;
         List<Player> online = new ArrayList<>(Bukkit.getOnlinePlayers());
         online.sort(Comparator.comparingInt((Player x) -> x.getName().length()).reversed());
         StringBuilder names = new StringBuilder();
@@ -333,14 +350,9 @@ public final class ChatListener implements Listener {
             if (names.length() > 0) names.append('|');
             names.append(Pattern.quote(o.getName()));
         }
-        if (names.length() == 0) return;
-        Matcher m = Pattern.compile("(?i)@(" + names + ")(?![A-Za-z0-9_])").matcher(text);
-        while (m.find()) {
-            Player target = Bukkit.getPlayerExact(m.group(1));
-            if (target == null) continue;
-            spans.add(new Rich.Span(m.start(), m.end(), Text.parse(s.mentionFormat, Placeholder.unparsed("player", target.getName()))));
-            if (!target.equals(p)) mentioned.add(target);
-        }
+        mentionPattern = names.length() == 0 ? null : Pattern.compile("(?i)@(" + names + ")(?![A-Za-z0-9_])");
+        mentionsDirty = false;
+        return mentionPattern;
     }
 
     private void notifyMentions(Player from, Settings s, Set<Player> targets) {
@@ -370,12 +382,14 @@ public final class ChatListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         plugin.state().join(event.getPlayer());
+        mentionsDirty = true;
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         plugin.state().quit(event.getPlayer());
         plugin.spam().forget(event.getPlayer().getUniqueId());
+        mentionsDirty = true;
     }
 
     @EventHandler

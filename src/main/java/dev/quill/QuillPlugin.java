@@ -58,6 +58,7 @@ public final class QuillPlugin extends JavaPlugin {
 
         for (var p : Bukkit.getOnlinePlayers()) state.join(p);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, warnings::save, 600L, 600L);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, snapshots::sweep, 1200L, 1200L);
         if (hooks.papi()) {
             expansion = new QuillExpansion(this);
             expansion.register();
