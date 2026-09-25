@@ -5,6 +5,7 @@ import dev.quill.chat.ChatState;
 import dev.quill.chat.Formats;
 import dev.quill.chat.Snapshots;
 import dev.quill.command.ChatToggleCommand;
+import dev.quill.command.LocalChatCommand;
 import dev.quill.command.QuillCommand;
 import dev.quill.command.StaffChatCommand;
 import dev.quill.filter.FilterEngine;
@@ -55,6 +56,7 @@ public final class QuillPlugin extends JavaPlugin {
         bind("quill", new QuillCommand(this));
         bind("staffchat", new StaffChatCommand(this));
         bind("chattoggle", new ChatToggleCommand(this));
+        bind("localchat", new LocalChatCommand(this));
 
         for (var p : Bukkit.getOnlinePlayers()) state.join(p);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, warnings::save, 600L, 600L);

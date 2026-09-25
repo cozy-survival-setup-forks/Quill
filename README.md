@@ -5,8 +5,9 @@ to stop the real thing and nothing else. Private messages, ignoring and muting a
 
 ## What it does
 
-- **Local chat.** A message is heard by players within a radius (64 blocks by default) in the same world. Start with `!`
-  to reach everyone (`quill.chat.global`). Staff switch on `/quill spy` to hear the rest in a spy format.
+- **Local chat.** Messages go to everyone. `/localchat <message>` is heard only by players within a radius (64 blocks by
+  default) in the same world, and `/localchat` alone switches your own chat between local and everyone (`quill.chat.local`,
+  everyone by default). Staff switch on `/quill spy` to hear local messages from anywhere in a spy format.
 - **Formats.** MiniMessage, one per permission and weight, separate local and global formats. Name, prefix and suffix
   come from placeholders, so LuckPerms prefixes and Spectrum name gradients just work. Hover and click on the name.
 - **Extras.** `[item]` shows the item in hand with its real hover, `[inv]` and `[ender]` open a read-only copy,
@@ -63,7 +64,7 @@ It is built around not stopping innocent messages:
 
 ## Permissions
 
-`quill.admin`, `quill.staffchat`, `quill.chat.global` (op), `quill.chat.item` `.inventory` `.ender` `.mention` (everyone),
+`quill.admin`, `quill.staffchat`, `quill.chat.local` (everyone), `quill.chat.item` `.inventory` `.ender` `.mention` (everyone),
 `quill.links` (op), `quill.filter.alerts`, `quill.bypass.filter` and `quill.bypass.filter.<category>`,
 `quill.bypass.spam`, `quill.bypass.chatmuted`, `quill.bypass.chatclear`, `quill.bypass.chattoggle`, `quill.bypass.ignore`,
 `quill.ignore.mentions`, `quill.announcements.bypass`.

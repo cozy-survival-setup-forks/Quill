@@ -7,11 +7,13 @@
 # Any PlaceholderAPI placeholder (%something%) can be used too.
 
 # ---------------------------------------------------------------------------------------------------------------
-# Local chat: a message is heard by the players within `radius` blocks in the same world. Start a message with the
-# global prefix to reach everyone (needs quill.chat.global). Staff with /quill spy hear everything, in a spy format.
+# Local chat: /localchat <message> is heard by the players within `radius` blocks in the same world, every other
+# message goes to everyone. /localchat alone switches your own chat between local and everyone. Staff with /quill spy
+# hear local messages from everywhere, in a spy format. `/quill local` switches local chat off for the whole server.
 local:
   radius: 64
-  global-prefix: "!"
+  # What /localchat puts in front of a message, typing it by hand works too
+  prefix: "~"
   # A short note above the hotbar when nobody was close enough to hear
   hint-when-alone: true
   # Worlds where everything is global

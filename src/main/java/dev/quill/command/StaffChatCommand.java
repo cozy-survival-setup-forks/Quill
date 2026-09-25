@@ -32,7 +32,7 @@ public final class StaffChatCommand implements CommandExecutor {
         // said as if typed with the staff prefix
         String prefix = plugin.settings().staffPrefix;
         String text = prefix + String.join(" ", args);
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> p.chat(text));
+        Bukkit.getScheduler().runTask(plugin, () -> p.chat(text));
         return true;
     }
 }

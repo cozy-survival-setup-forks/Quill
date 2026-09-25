@@ -19,6 +19,10 @@ commands:
     aliases: [sc]
     usage: /<command> [message]
     permission: quill.staffchat
+  localchat:
+    description: Say something to the players nearby, or switch your chat to local
+    aliases: [lc]
+    usage: /<command> [message]
   chattoggle:
     description: Hide or show public chat for yourself
     aliases: [togglechat]
@@ -31,9 +35,9 @@ permissions:
   quill.staffchat:
     description: Use staff chat, and read it
     default: op
-  quill.chat.global:
-    description: Start a message with the global prefix to reach everyone
-    default: op
+  quill.chat.local:
+    description: Use /localchat
+    default: true
   quill.chat.item:
     description: Show the item in hand with [item]
     default: true

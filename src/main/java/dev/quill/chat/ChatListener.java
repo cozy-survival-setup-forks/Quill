@@ -176,16 +176,19 @@ public final class ChatListener implements Listener {
         String full = Rich.text(all);
 
         boolean localActive = state.localOn && !s.ignoreWorlds.contains(p.getWorld().getName().toLowerCase(Locale.ROOT));
-        boolean staff = false, global = !localActive;
+        boolean staff = false, global = true;
         int cut = 0;
         if (!s.staffPrefix.isEmpty() && full.startsWith(s.staffPrefix) && p.hasPermission("quill.staffchat")) {
             staff = true;
             cut = s.staffPrefix.length();
         } else if (state.staffMode(p.getUniqueId()) && p.hasPermission("quill.staffchat")) {
             staff = true;
-        } else if (localActive && !s.globalPrefix.isEmpty() && full.startsWith(s.globalPrefix) && p.hasPermission("quill.chat.global")) {
-            global = true;
-            cut = s.globalPrefix.length();
+        } else if (!s.localPrefix.isEmpty() && full.startsWith(s.localPrefix) && p.hasPermission("quill.chat.local")) {
+            // /localchat <message>: only nearby players hear it
+            global = !localActive;
+            cut = s.localPrefix.length();
+        } else if (localActive && state.localMode(p.getUniqueId()) && p.hasPermission("quill.chat.local")) {
+            global = false;
         }
         while (cut < full.length() && full.charAt(cut) == ' ') cut++;
         if (cut >= full.length()) {

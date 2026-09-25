@@ -17,7 +17,7 @@ public final class Settings {
     }
 
     public final double radius;
-    public final String globalPrefix;
+    public final String localPrefix;
     public final boolean hintWhenAlone;
     public final Set<String> ignoreWorlds = new HashSet<>();
 
@@ -45,7 +45,7 @@ public final class Settings {
 
     public Settings(FileConfiguration c, ConfigurationSection filter) {
         radius = Math.max(1, c.getDouble("local.radius", 64));
-        globalPrefix = c.getString("local.global-prefix", "!");
+        localPrefix = c.getString("local.prefix", "~");
         hintWhenAlone = c.getBoolean("local.hint-when-alone", true);
         for (String w : c.getStringList("local.ignore-worlds")) ignoreWorlds.add(w.toLowerCase(Locale.ROOT));
 

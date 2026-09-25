@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** The switches: chat muted for everyone, a player hiding public chat, staff listening in, staff chat mode. */
+/** The switches: chat muted for everyone, a player hiding public chat, staff listening in, staff chat mode, local chat mode. */
 public final class ChatState {
 
     private static final NamespacedKey HIDDEN = new NamespacedKey("quill", "chat_hidden");
@@ -18,6 +18,7 @@ public final class ChatState {
     private final Set<UUID> hidden = ConcurrentHashMap.newKeySet();
     private final Set<UUID> spies = ConcurrentHashMap.newKeySet();
     private final Set<UUID> staffMode = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> localMode = ConcurrentHashMap.newKeySet();
 
     public void join(Player p) {
         if (p.getPersistentDataContainer().has(HIDDEN, PersistentDataType.BYTE)) hidden.add(p.getUniqueId());
@@ -28,6 +29,7 @@ public final class ChatState {
         hidden.remove(id);
         spies.remove(id);
         staffMode.remove(id);
+        localMode.remove(id);
     }
 
     public boolean hidden(UUID id) {
@@ -64,5 +66,14 @@ public final class ChatState {
 
     public boolean toggleStaffMode(UUID id) {
         return !staffMode.remove(id) && staffMode.add(id);
+    }
+
+    /** Whether every message of the player is local, switched with /localchat. */
+    public boolean localMode(UUID id) {
+        return localMode.contains(id);
+    }
+
+    public boolean toggleLocalMode(UUID id) {
+        return !localMode.remove(id) && localMode.add(id);
     }
 }
