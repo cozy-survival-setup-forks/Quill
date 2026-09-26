@@ -273,8 +273,8 @@ public final class ChatListener implements Listener {
         String suf = plugin.hooks().apply(p, s.suffix).trim();
         return Text.parse(filled,
                 Placeholder.component("name", name),
-                Placeholder.component("prefix", pre.isEmpty() ? Component.empty() : Text.legacy(pre)),
-                Placeholder.component("suffix", suf.isEmpty() ? Component.empty() : Text.legacy(suf)),
+                Placeholder.component("prefix", pre.isEmpty() ? Component.empty() : Text.rich(pre, true)),
+                Placeholder.component("suffix", suf.isEmpty() ? Component.empty() : Text.rich(suf, true)),
                 Placeholder.component("message", message),
                 Placeholder.component("displayname", p.displayName()),
                 Placeholder.unparsed("player", p.getName()),

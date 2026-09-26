@@ -45,7 +45,8 @@ public final class Hooks {
      */
     public String apply(Player player, String text) {
         if (text == null || text.isEmpty() || text.indexOf('%') < 0) return text == null ? "" : text;
-        String out = papi ? PlaceholderAPI.setPlaceholders(player, text) : text;
+        // PlaceholderAPI has no %player%, so it is the same as %player_name%
+        String out = papi ? PlaceholderAPI.setPlaceholders(player, text.replace("%player%", "%player_name%")) : text.replace("%player%", player.getName());
         return UNRESOLVED.matcher(out).replaceAll("");
     }
 
