@@ -1,12 +1,14 @@
 package dev.quill;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,6 +92,20 @@ public final class Text {
     /** Text with legacy codes (a placeholder's output, like %spectrum_name%) as a component. */
     public static Component legacy(String text) {
         return rich(text, false);
+    }
+
+    /**
+     * The colour and decorations still open at the end of a prefix, as they are in old-style chat where a code at
+     * the end of the prefix (&#RRGGBB after the last space) colours the name that follows.
+     */
+    public static Style trailingStyle(String value) {
+        return tail(rich(value + "X", true), Style.empty());
+    }
+
+    private static Style tail(Component c, Style inherited) {
+        Style own = c.style().merge(inherited, Style.Merge.Strategy.IF_ABSENT_ON_TARGET);
+        List<Component> kids = c.children();
+        return kids.isEmpty() ? own : tail(kids.get(kids.size() - 1), own);
     }
 
     public static String plain(Component component) {

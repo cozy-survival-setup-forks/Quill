@@ -56,4 +56,16 @@ class TextTest {
         String mini = Text.toMini("&l<&#FFD700^-^");
         assertTrue(mini.indexOf("<reset>") > mini.indexOf("<bold>"));
     }
+
+    @Test
+    void aColourAtTheEndOfThePrefixReachesTheName() {
+        var style = Text.trailingStyle("&#8BF0A6&lSPROUT&r &#8BF0A6");
+        assertEquals("#8bf0a6", style.color().asHexString().toLowerCase());
+        assertFalse(style.hasDecoration(net.kyori.adventure.text.format.TextDecoration.BOLD));
+    }
+
+    @Test
+    void aPrefixWithNoOpenColourLeavesTheNameAlone() {
+        assertNull(Text.trailingStyle("&#8BF0A6&lSPROUT&r ").color());
+    }
 }

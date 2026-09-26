@@ -271,6 +271,8 @@ public final class ChatListener implements Listener {
         String filled = plugin.hooks().apply(p, template);
         String pre = plugin.hooks().apply(p, s.prefix).trim();
         String suf = plugin.hooks().apply(p, s.suffix).trim();
+        // a colour left open at the end of the prefix carries on to the name, as it does in old-style chat
+        if (!pre.isEmpty()) name = name.applyFallbackStyle(Text.trailingStyle(pre));
         return Text.parse(filled,
                 Placeholder.component("name", name),
                 Placeholder.component("prefix", pre.isEmpty() ? Component.empty() : Text.rich(pre, true)),
