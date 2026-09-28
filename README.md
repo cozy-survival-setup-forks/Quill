@@ -27,8 +27,10 @@ It is built around not stopping innocent messages:
 - Words match as **whole words**, so "class", "assassin", "Scunthorpe" and "Niger" are never a hit. Plurals and
   forms are listed, not guessed.
 - It sees through the usual disguises: capitals, accents, full-width and look-alike letters from other alphabets,
-  zero-width characters, l33t (`n1gger`), stretched letters (`niiigger`), letters typed one at a time (`n i g g e r`,
-  `n.i.g.g.e.r`) and masked letters (`f*ck`). It never makes a shorter word longer, so "niger" stays a country.
+  invisible characters, l33t (`n1gger`), stretched letters (`niiigger`), letters typed one at a time (`n i g g e r`,
+  `n.i.g.g.e.r`), a word broken by a space or a symbol (`nig ger`, `nig'ger`) and masked letters (`f*ck`). It never
+  makes a shorter word longer, so "niger" stays a country.
+- The name, lore and contents of an item shown with `[item]` are checked like any other text.
 - A few long, unmistakable words are also matched inside a longer one, minus a safe list ("snigger").
 - Words with an innocent meaning have safe phrases ("chink in the armor", "Maine Coon", "spick and span").
 - Online player names are never a hit.
