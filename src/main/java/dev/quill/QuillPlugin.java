@@ -78,6 +78,7 @@ public final class QuillPlugin extends JavaPlugin {
             expansion.register();
         }
         getLogger().info("Quill ready: " + engine.terms().wordCount() + " filtered words, local radius " + (int) settings.radius + ".");
+        Banner.print(this, "Thanks for keeping every conversation clean and cozy.");
     }
 
     @Override
