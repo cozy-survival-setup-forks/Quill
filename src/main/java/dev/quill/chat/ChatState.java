@@ -56,10 +56,6 @@ public final class ChatState {
         return !spies.remove(id) && spies.add(id);
     }
 
-    public Set<UUID> spies() {
-        return spies;
-    }
-
     public boolean staffMode(UUID id) {
         return staffMode.contains(id);
     }

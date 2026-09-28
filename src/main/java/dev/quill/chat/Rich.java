@@ -43,11 +43,6 @@ final class Rich {
         return sb.toString();
     }
 
-    /** The characters from `from` on, as a message again. */
-    static Component from(List<Ch> chars, int from) {
-        return replace(chars.subList(Math.min(from, chars.size()), chars.size()), List.of());
-    }
-
     /** The message with the spans replaced. Spans must be sorted and must not overlap. */
     static Component replace(List<Ch> chars, List<Span> spans) {
         List<Component> parts = new ArrayList<>();

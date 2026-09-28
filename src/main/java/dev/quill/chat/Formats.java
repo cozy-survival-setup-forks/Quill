@@ -15,26 +15,29 @@ public final class Formats {
 
     private static final String FALLBACK = "<name><dark_gray> » </dark_gray><message>";
 
-    private final List<Format> formats = new ArrayList<>();
+    /** Replaced whole, never edited in place: chat threads read this while a reload runs on the main thread. */
+    private volatile List<Format> formats = List.of(new Format("default", "", 0, FALLBACK, FALLBACK));
 
     public void load(ConfigurationSection section) {
-        formats.clear();
+        List<Format> loaded = new ArrayList<>();
         if (section != null) {
             for (String id : section.getKeys(false)) {
                 ConfigurationSection s = section.getConfigurationSection(id);
                 if (s == null) continue;
                 String global = s.getString("global", FALLBACK);
-                formats.add(new Format(id, s.getString("permission", ""), s.getInt("weight", 0), s.getString("local", global), global));
+                loaded.add(new Format(id, s.getString("permission", ""), s.getInt("weight", 0), s.getString("local", global), global));
             }
         }
-        if (formats.isEmpty()) formats.add(new Format("default", "", 0, FALLBACK, FALLBACK));
-        formats.sort(Comparator.comparingInt(Format::weight).reversed());
+        if (loaded.isEmpty()) loaded.add(new Format("default", "", 0, FALLBACK, FALLBACK));
+        loaded.sort(Comparator.comparingInt(Format::weight).reversed());
+        formats = List.copyOf(loaded);
     }
 
     public Format pick(Player p) {
-        for (Format f : formats) {
+        List<Format> current = formats;
+        for (Format f : current) {
             if (f.permission.isEmpty() || p.hasPermission(f.permission)) return f;
         }
-        return formats.get(formats.size() - 1);
+        return current.get(current.size() - 1);
     }
 }

@@ -45,10 +45,7 @@ public final class QuillCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         switch (sub) {
-            case "reload" -> {
-                plugin.reloadAll();
-                plugin.lang().send(sender, "reloaded");
-            }
+            case "reload" -> plugin.lang().send(sender, plugin.reloadAll() ? "reloaded" : "reload-failed");
             case "spy" -> {
                 if (!(sender instanceof Player p)) {
                     plugin.lang().send(sender, "players-only");
@@ -59,15 +56,14 @@ public final class QuillCommand implements CommandExecutor, TabCompleter {
             case "local" -> local(sender, args);
             case "mutechat" -> {
                 plugin.state().muted = !plugin.state().muted;
-                Component note = plugin.lang().get(plugin.state().muted ? "chat-muted-broadcast" : "chat-unmuted-broadcast");
-                Bukkit.broadcast(note);
+                plugin.lang().broadcast(plugin.state().muted ? "chat-muted-broadcast" : "chat-unmuted-broadcast");
             }
             case "clearchat" -> {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (p.hasPermission("quill.bypass.chatclear")) continue;
                     for (int i = 0; i < 100; i++) p.sendMessage(Component.empty());
                 }
-                Bukkit.broadcast(plugin.lang().get("chat-cleared", Placeholder.unparsed("player", sender.getName())));
+                plugin.lang().broadcast("chat-cleared", Placeholder.unparsed("player", sender.getName()));
             }
             case "filter" -> filter(sender, args);
             case "warnings", "clearwarnings" -> warnings(sender, args, sub.equals("clearwarnings"));
@@ -111,8 +107,10 @@ public final class QuillCommand implements CommandExecutor, TabCompleter {
             plugin.lang().send(sender, "usage");
             return;
         }
-        OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-        if (!target.hasPlayedBefore() && !target.isOnline()) {
+        // getOfflinePlayer(String) asks Mojang, on the main thread, for a name that isn't cached
+        OfflinePlayer target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) target = Bukkit.getOfflinePlayerIfCached(args[1]);
+        if (target == null) {
             plugin.lang().send(sender, "player-not-found", Placeholder.unparsed("player", args[1]));
             return;
         }

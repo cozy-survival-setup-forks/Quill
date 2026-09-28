@@ -18,9 +18,12 @@ public final class Snapshots {
 
     /** Marks the windows Quill opens, so they can be locked. */
     public static final class Holder implements InventoryHolder {
+        private Inventory inventory;
+
         @Override
         public Inventory getInventory() {
-            return null;
+            // never null: other plugins that look at the holder of a clicked window would otherwise throw
+            return inventory;
         }
     }
 
@@ -67,12 +70,13 @@ public final class Snapshots {
         Snap s = snaps.get(id);
         if (s == null) return false;
         Component title = Component.text(s.owner + (s.ender ? "'s Ender Chest" : "'s Inventory"));
+        Holder holder = new Holder();
         Inventory view;
         if (s.ender) {
-            view = Bukkit.createInventory(new Holder(), 27, title);
+            view = Bukkit.createInventory(holder, 27, title);
             for (int i = 0; i < 27 && i < s.items.length; i++) view.setItem(i, s.items[i]);
         } else {
-            view = Bukkit.createInventory(new Holder(), 54, title);
+            view = Bukkit.createInventory(holder, 54, title);
             // armor and off hand on top, the bag below it, the hotbar last
             for (int i = 0; i < s.armor.length && i < 4; i++) view.setItem(3 - i, s.armor[i]);
             view.setItem(4, s.offhand);
@@ -85,6 +89,7 @@ public final class Snapshots {
             for (int i = 5; i < 9; i++) view.setItem(i, pane);
             for (int i = 45; i < 54; i++) view.setItem(i, pane);
         }
+        holder.inventory = view;
         viewer.openInventory(view);
         return true;
     }

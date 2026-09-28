@@ -111,9 +111,4 @@ public final class Text {
     public static String plain(Component component) {
         return PlainTextComponentSerializer.plainText().serialize(component);
     }
-
-    /** Escapes text so MiniMessage shows it as it is. */
-    public static String escape(String text) {
-        return MINI.escapeTags(text);
-    }
 }

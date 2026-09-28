@@ -6,6 +6,7 @@ prefix: "<gradient:#7aa2ff:#b48cff><bold>QUILL</bold></gradient> <dark_gray>» "
 no-permission: "<red>You do not have permission."
 players-only: "<red>Only players can do that."
 reloaded: "<white>Reloaded every file."
+reload-failed: "<red>A file has a mistake in it, check the console. Anything broken was left as it was."
 player-not-found: "<red><player> has not played here."
 
 usage:

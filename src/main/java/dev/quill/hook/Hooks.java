@@ -31,6 +31,7 @@ public final class Hooks {
             } catch (ReflectiveOperationException | LinkageError e) {
                 getUser = null;
                 isIgnored = null;
+                Bukkit.getLogger().warning("[Quill] Essentials is installed but its /ignore list could not be read (" + e + "), so /ignore will not be respected.");
             }
         }
     }
@@ -45,8 +46,10 @@ public final class Hooks {
      */
     public String apply(Player player, String text) {
         if (text == null || text.isEmpty() || text.indexOf('%') < 0) return text == null ? "" : text;
-        // PlaceholderAPI has no %player%, so it is the same as %player_name%
-        String out = papi ? PlaceholderAPI.setPlaceholders(player, text.replace("%player%", "%player_name%")) : text.replace("%player%", player.getName());
+        // PlaceholderAPI has no %player%, so it is the same as %player_name%. A null player (announcements)
+        // has no name to fill in, and "100% free" must not throw when PlaceholderAPI is absent.
+        String out = papi ? PlaceholderAPI.setPlaceholders(player, text.replace("%player%", "%player_name%"))
+                : player == null ? text : text.replace("%player%", player.getName());
         return UNRESOLVED.matcher(out).replaceAll("");
     }
 

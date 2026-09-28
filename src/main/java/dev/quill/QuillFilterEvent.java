@@ -1,6 +1,7 @@
 package dev.quill;
 
 import dev.quill.filter.Verdict;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -16,7 +17,9 @@ public final class QuillFilterEvent extends Event {
     private final int warnings;
 
     public QuillFilterEvent(Player player, String message, Verdict verdict, int warnings) {
-        super(true);
+        // Paper rejects an async event fired from the main thread, and /localchat and /staffchat run the chat
+        // event (and so this one) from there through Player#chat.
+        super(!Bukkit.isPrimaryThread());
         this.player = player;
         this.message = message;
         this.verdict = verdict;

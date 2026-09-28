@@ -15,12 +15,15 @@ import dev.quill.hook.Hooks;
 import dev.quill.hook.QuillExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 
 /**
  * Quill: chat for a survival server. A local range, formats, the usual extras, and a filter for advertising and hate
@@ -42,6 +45,15 @@ public final class QuillPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        try {
+            enableInner();
+        } catch (RuntimeException e) {
+            getLogger().log(Level.SEVERE, "Quill could not start, check config.yml, filter.yml, terms.yml and messages.yml for mistakes", e);
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
+    }
+
+    private void enableInner() {
         saveDefaultConfig();
         for (String name : new String[]{"filter.yml", "terms.yml"}) {
             if (!new File(getDataFolder(), name).exists()) saveResource(name, false);
@@ -82,30 +94,62 @@ public final class QuillPlugin extends JavaPlugin {
         if (handler instanceof org.bukkit.command.TabCompleter t) command.setTabCompleter(t);
     }
 
-    /** Reads every file again. */
-    public void reloadAll() {
-        reloadConfig();
-        YamlConfiguration filter = read("filter.yml");
-        YamlConfiguration terms = read("terms.yml");
-        settings = new Settings(getConfig(), filter);
+    /**
+     * Reads every file again.
+     *
+     * @return false if a file has a mistake in it. On a reload the broken file is left as it was (a parse error
+     * would otherwise turn into an empty file, and an empty terms.yml means no filter at all); on the very first
+     * load there is nothing to keep, so the bundled copy is used.
+     */
+    public boolean reloadAll() {
+        boolean first = engine == null;
+        YamlConfiguration config = parse("config.yml");
+        YamlConfiguration filter = parse("filter.yml");
+        YamlConfiguration terms = parse("terms.yml");
+        boolean ok = config != null && filter != null && terms != null;
+        if (!ok) {
+            if (!first) {
+                lang.load();
+                return false;
+            }
+            if (config == null) config = bundled("config.yml");
+            if (filter == null) filter = bundled("filter.yml");
+            if (terms == null) terms = bundled("terms.yml");
+        }
+
+        settings = new Settings(config, filter);
         FilterEngine fresh = new FilterEngine(filter, terms);
         for (String problem : fresh.problems()) getLogger().warning("Filter: " + problem);
         engine = fresh;
         spam.load(filter.getConfigurationSection("spam"));
         warnings.decayMinutes(settings.decayMinutes);
-        formats.load(getConfig().getConfigurationSection("formats"));
+        formats.load(config.getConfigurationSection("formats"));
         snapshots.keepSeconds(settings.cacheSeconds);
-        lang.load();
+        if (!lang.load()) ok = false;
         hooks.refresh();
         announcer.restart();
+        return ok;
     }
 
-    /** A yml from the plugin folder, with the bundled one behind it for anything an older file lacks. */
-    private YamlConfiguration read(String name) {
-        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(new File(getDataFolder(), name));
+    /** A yml from the plugin folder with the bundled one behind it for anything an older file lacks, or null if it does not parse. */
+    private YamlConfiguration parse(String name) {
+        YamlConfiguration yaml = new YamlConfiguration();
+        try {
+            yaml.load(new File(getDataFolder(), name));
+        } catch (IOException | InvalidConfigurationException e) {
+            getLogger().log(Level.SEVERE, name + " is broken", e);
+            return null;
+        }
         var bundled = getResource(name);
         if (bundled != null) yaml.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(bundled, StandardCharsets.UTF_8)));
         return yaml;
+    }
+
+    private YamlConfiguration bundled(String name) {
+        getLogger().severe("Using the bundled " + name + " until the one in the plugin folder is fixed and /quill reload is run.");
+        var stream = getResource(name);
+        return stream == null ? new YamlConfiguration()
+                : YamlConfiguration.loadConfiguration(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     public Settings settings() {

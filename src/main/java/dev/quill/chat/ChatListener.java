@@ -124,8 +124,10 @@ public final class ChatListener implements Listener {
                     .append(Component.text("Click to see their warnings", net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY));
             Component alert = plugin.lang().get("filter-alert", who).hoverEvent(HoverEvent.showText(hover))
                     .clickEvent(ClickEvent.runCommand("/quill warnings " + p.getName()));
-            for (Player staff : Bukkit.getOnlinePlayers()) {
-                if (staff.hasPermission("quill.filter.alerts")) staff.sendMessage(alert);
+            if (plugin.lang().has("filter-alert")) {
+                for (Player staff : Bukkit.getOnlinePlayers()) {
+                    if (staff.hasPermission("quill.filter.alerts")) staff.sendMessage(alert);
+                }
             }
         }
         if (s.logFile) log(p, verdict, text, count);
@@ -198,16 +200,9 @@ public final class ChatListener implements Listener {
         List<Rich.Ch> body = all.subList(cut, all.size());
         String text = Rich.text(body);
 
-        // the extras: items, inventories, links, @mentions
-        List<Rich.Span> spans = new ArrayList<>();
-        Set<Player> mentioned = new HashSet<>();
-        if (s.items) itemSpans(p, s, text, body, spans);
-        if (s.clickableLinks) linkSpans(text, body, spans);
-        if (s.mentions && text.indexOf('@') >= 0 && p.hasPermission("quill.chat.mention")) mentionSpans(p, s, text, spans, mentioned);
-        Component message = Rich.replace(body, disjoint(spans));
-        event.message(message);
-
-        // who hears it
+        // who hears it. This comes before the extras below: if anything after this point throws, Bukkit logs
+        // it and sends the event on with whatever viewers it has at that moment, so a staff or local message
+        // must already be down to its real audience by then instead of going out to everyone.
         Set<Audience> viewers = event.viewers();
         Set<UUID> spySet = new HashSet<>();
         int heard = 0;
@@ -234,6 +229,25 @@ public final class ChatListener implements Listener {
                 p.sendActionBar(plugin.lang().bare("nobody-heard"));
             }
         }
+
+        // the extras: items, inventories, links, @mentions
+        List<Rich.Span> spans = new ArrayList<>();
+        Set<Player> mentioned = new HashSet<>();
+        Component message;
+        try {
+            if (s.items) itemSpans(p, s, text, spans);
+            if (s.clickableLinks) linkSpans(text, body, spans);
+            if (s.mentions && text.indexOf('@') >= 0 && p.hasPermission("quill.chat.mention")) mentionSpans(p, s, text, spans, mentioned);
+            message = Rich.replace(body, disjoint(spans));
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "Could not add the extras to a message of " + p.getName() + ", sending it plain", e);
+            mentioned.clear();
+            message = Rich.replace(body, List.of());
+        }
+        event.message(message);
+        // a mention only pings someone who actually got the message: not a player who ignores the sender,
+        // hid chat, is out of local range, or (for staff chat) is not staff
+        mentioned.removeIf(t -> !viewers.contains(t));
 
         // how it looks
         Formats.Format format = plugin.formats().pick(p);
@@ -285,7 +299,7 @@ public final class ChatListener implements Listener {
 
     // ---------------------------------------------------------------- the extras
 
-    private void itemSpans(Player p, Settings s, String text, List<Rich.Ch> body, List<Rich.Span> spans) {
+    private void itemSpans(Player p, Settings s, String text, List<Rich.Span> spans) {
         String lower = text.toLowerCase(Locale.ROOT);
         for (String token : s.itemTokens) {
             if (!p.hasPermission("quill.chat.item")) break;
@@ -348,6 +362,9 @@ public final class ChatListener implements Listener {
     /** Names change only on join or quit, so the pattern is rebuilt then instead of once per message. */
     private Pattern mentionPattern() {
         if (!mentionsDirty) return mentionPattern;
+        // cleared before the names are read, not after: a join landing while this is being built sets it
+        // again, instead of having its mark wiped by the line below and never being picked up
+        mentionsDirty = false;
         List<Player> online = new ArrayList<>(Bukkit.getOnlinePlayers());
         online.sort(Comparator.comparingInt((Player x) -> x.getName().length()).reversed());
         StringBuilder names = new StringBuilder();
@@ -356,7 +373,6 @@ public final class ChatListener implements Listener {
             names.append(Pattern.quote(o.getName()));
         }
         mentionPattern = names.length() == 0 ? null : Pattern.compile("(?i)@(" + names + ")(?![A-Za-z0-9_])");
-        mentionsDirty = false;
         return mentionPattern;
     }
 
@@ -399,11 +415,11 @@ public final class ChatListener implements Listener {
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof Snapshots.Holder) event.setCancelled(true);
+        if (event.getView().getTopInventory().getHolder(false) instanceof Snapshots.Holder) event.setCancelled(true);
     }
 
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof Snapshots.Holder) event.setCancelled(true);
+        if (event.getView().getTopInventory().getHolder(false) instanceof Snapshots.Holder) event.setCancelled(true);
     }
 }

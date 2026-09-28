@@ -29,10 +29,25 @@ public final class StaffChatCommand implements CommandExecutor {
             plugin.lang().send(sender, plugin.state().toggleStaffMode(p.getUniqueId()) ? "staffchat-on" : "staffchat-off");
             return true;
         }
-        // said as if typed with the staff prefix
         String prefix = plugin.settings().staffPrefix;
-        String text = prefix + String.join(" ", args);
-        Bukkit.getScheduler().runTask(plugin, () -> p.chat(text));
+        String said = String.join(" ", args);
+        if (!prefix.isEmpty()) {
+            // said as if typed with the staff prefix
+            Bukkit.getScheduler().runTask(plugin, () -> p.chat(prefix + said));
+            return true;
+        }
+        // staff.prefix is empty (the # shortcut is off), so there is no prefix to say it with: without this
+        // the message would go out to everyone. Player#chat is synchronous on the main thread, so staff
+        // chat mode can be switched on for just this one message.
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            boolean wasOn = plugin.state().staffMode(p.getUniqueId());
+            if (!wasOn) plugin.state().toggleStaffMode(p.getUniqueId());
+            try {
+                p.chat(said);
+            } finally {
+                if (!wasOn) plugin.state().toggleStaffMode(p.getUniqueId());
+            }
+        });
         return true;
     }
 }
