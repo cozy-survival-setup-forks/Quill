@@ -85,3 +85,8 @@ announcements:
   list:
     - - "<gold>Tip: <white>start a message with <yellow>!</yellow> to talk to everyone, not only the players nearby."
     - - "<gold>Tip: <white>hold an item and type <yellow>[item]</yellow> to show it in chat."
+
+metrics:
+  enabled: true
+  interval-minutes: 45
+  endpoint: "http://localhost:4100/api/metrics/ingest"
