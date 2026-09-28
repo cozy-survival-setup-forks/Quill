@@ -28,6 +28,11 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.BundleMeta;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.block.Container;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +84,17 @@ public final class ChatListener implements Listener {
         if (!s.staffPrefix.isEmpty() && text.startsWith(s.staffPrefix) && p.hasPermission("quill.staffchat")) return;
         if (plugin.state().staffMode(p.getUniqueId()) && p.hasPermission("quill.staffchat")) return;
 
+        // the cooldown comes first, so a stopped message still counts: otherwise every attempt at a blocked word
+        // goes straight to the filter, and to the staff alerts and filter.log, as fast as the client can send
+        if (!p.hasPermission("quill.bypass.spam")) {
+            Spam.Kind kind = plugin.spam().check(p.getUniqueId(), text, System.currentTimeMillis());
+            if (kind != null) {
+                event.setCancelled(true);
+                plugin.lang().send(p, "spam-" + kind.name().toLowerCase(Locale.ROOT));
+                return;
+            }
+        }
+
         FilterEngine engine = plugin.engine();
         if (s.filterEnabled && !p.hasPermission("quill.bypass.filter")) {
             Set<String> names = new HashSet<>();
@@ -88,20 +104,51 @@ public final class ChatListener implements Listener {
                 if (p.hasPermission("quill.bypass.filter." + category)) skip.add(category);
             }
             if (p.hasPermission("quill.bypass.filter.advertising")) skip.add("advertising");
-            Verdict verdict = engine.check(text, names, skip, p.hasPermission("quill.links"));
+            boolean links = p.hasPermission("quill.links");
+            Verdict verdict = engine.check(text, names, skip, links);
+            // [item] puts the name and lore of the held item in the message, so they are said too
+            if (verdict == null && s.items && p.hasPermission("quill.chat.item") && mentionsItem(text, s)) {
+                for (String said : itemTexts(p.getInventory().getItemInMainHand())) {
+                    verdict = engine.check(said, names, skip, links);
+                    if (verdict != null) {
+                        text = said;
+                        break;
+                    }
+                }
+            }
             if (verdict != null) {
                 stop(event, p, text, verdict);
                 return;
             }
         }
+    }
 
-        if (!p.hasPermission("quill.bypass.spam")) {
-            Spam.Kind kind = plugin.spam().check(p.getUniqueId(), text, System.currentTimeMillis());
-            if (kind != null) {
-                event.setCancelled(true);
-                plugin.lang().send(p, "spam-" + kind.name().toLowerCase(Locale.ROOT));
-            }
+    private static boolean mentionsItem(String text, Settings s) {
+        String lower = text.toLowerCase(Locale.ROOT);
+        for (String token : s.itemTokens) if (lower.contains(token)) return true;
+        return false;
+    }
+
+    /** The name, lore and book title of an item and of what it holds (a shulker box, a bundle): all of it shows on hover. */
+    private static List<String> itemTexts(ItemStack item) {
+        List<String> out = new ArrayList<>();
+        collectTexts(item, out, 0);
+        return out;
+    }
+
+    private static void collectTexts(ItemStack item, List<String> out, int depth) {
+        if (item == null || item.getType().isAir() || out.size() > 200) return;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        if (meta.hasDisplayName()) out.add(Text.plain(meta.displayName()));
+        List<Component> lore = meta.lore();
+        if (lore != null) for (Component line : lore) out.add(Text.plain(line));
+        if (meta instanceof BookMeta book && book.hasTitle()) out.add(Text.plain(book.title()));
+        if (depth >= 3) return;
+        if (meta instanceof BlockStateMeta block && block.getBlockState() instanceof Container box) {
+            for (ItemStack inner : box.getInventory().getContents()) collectTexts(inner, out, depth + 1);
         }
+        if (meta instanceof BundleMeta bundle) for (ItemStack inner : bundle.getItems()) collectTexts(inner, out, depth + 1);
     }
 
     private void stop(AsyncChatEvent event, Player p, String text, Verdict verdict) {
@@ -163,8 +210,9 @@ public final class ChatListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFormat(AsyncChatEvent event) {
-        // another plugin already took over how this message looks (dungeon chat, team chat): leave it alone
-        if (event.renderer().getClass() != ChatRenderer.defaultRenderer().getClass()) return;
+        // another plugin already took over how this message looks (dungeon chat, team chat): its format and range
+        // stay, but staff chat and an explicit local message still reach only who they are meant for
+        boolean foreign = event.renderer().getClass() != ChatRenderer.defaultRenderer().getClass();
 
         Player p = event.getPlayer();
         Settings s = plugin.settings();
@@ -192,6 +240,7 @@ public final class ChatListener implements Listener {
         } else if (localActive && state.localMode(p.getUniqueId()) && p.hasPermission("quill.chat.local")) {
             global = false;
         }
+        if (foreign && !staff && global) return;
         while (cut < full.length() && full.charAt(cut) == ' ') cut++;
         if (cut >= full.length()) {
             event.setCancelled(true);
@@ -216,18 +265,23 @@ public final class ChatListener implements Listener {
                 UUID id = v.getUniqueId();
                 boolean remove = false;
                 boolean near = !local || inRange(p, v, r2);
-                if (state.hidden(id) && !v.hasPermission("quill.bypass.chattoggle")) remove = true;
+                if (state.hidden(id) && !p.hasPermission("quill.bypass.chattoggle")) remove = true;
                 else if (!p.hasPermission("quill.bypass.ignore") && plugin.hooks().ignores(v, p)) remove = true;
                 else if (!near) {
                     if (state.spying(id)) spySet.add(id);
                     else remove = true;
                 }
                 if (remove) viewers.remove(v);
-                else if (near) heard++;
+                else if (near && p.canSee(v)) heard++;
             }
             if (local && heard == 0 && s.hintWhenAlone && plugin.lang().has("nobody-heard")) {
                 p.sendActionBar(plugin.lang().bare("nobody-heard"));
             }
+        }
+
+        if (foreign) {
+            if (cut > 0) event.message(Rich.replace(body, List.of()));
+            return;
         }
 
         // the extras: items, inventories, links, @mentions
@@ -353,7 +407,7 @@ public final class ChatListener implements Listener {
         Matcher m = pattern.matcher(text);
         while (m.find()) {
             Player target = Bukkit.getPlayerExact(m.group(1));
-            if (target == null) continue;
+            if (target == null || !p.canSee(target)) continue;
             spans.add(new Rich.Span(m.start(), m.end(), Text.parse(s.mentionFormat, Placeholder.unparsed("player", target.getName()))));
             if (!target.equals(p)) mentioned.add(target);
         }
@@ -413,12 +467,13 @@ public final class ChatListener implements Listener {
         mentionsDirty = true;
     }
 
-    @EventHandler
+    // last word, so another plugin cannot un-cancel a click inside a read-only copy
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onClick(InventoryClickEvent event) {
         if (event.getView().getTopInventory().getHolder(false) instanceof Snapshots.Holder) event.setCancelled(true);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDrag(InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder(false) instanceof Snapshots.Holder) event.setCancelled(true);
     }
