@@ -160,7 +160,7 @@ class FilterTest {
         String[] talk = {
                 "hello everyone", "gg", "gg wp", "gg.wp", "ez.gg", "ok.so I think we should go", "yes.no maybe", "e.g. this and i.e. that",
                 "I am at 100 64 -300", "x: 120 y: 64 z: 300", "version 1.21.4 is out", "1.21.11.0", "the ip is 127.0.0.1", "0.0.0.0",
-                "class", "classic", "assassin", "Scunthorpe", "assistant", "grass", "bass", "glass", "passage", "cocktail", "peacock",
+                "class", "classic", "assassin", "Scunthorpe", "assistance", "grass", "bass", "glass", "passage", "cocktail", "peacock",
                 "Hancock", "dickens", "Dickson", "shiitake", "Essex", "Sussex", "cumulative", "title", "analysis", "therapist",
                 "Niger", "the river Niger", "Nigeria", "Nigel", "niger", "snigger", "sniggering", "niggardly", "niggard",
                 "there is a chink in the armor", "a chink of light", "Maine Coon", "my maine coon cat", "raccoon", "raccoons",
