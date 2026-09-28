@@ -69,6 +69,12 @@ It is built around not stopping innocent messages:
 `quill.bypass.spam`, `quill.bypass.chatmuted`, `quill.bypass.chatclear`, `quill.bypass.chattoggle`, `quill.bypass.ignore`,
 `quill.ignore.mentions`, `quill.announcements.bypass`.
 
+## Telemetry
+
+On startup Quill sends a small anonymous beacon (plugin name/version, server software/version,
+online/max player counts, and a random ID with no player data) so we know which versions are in
+use. Turn it off with `metrics.enabled: false` in `config.yml`.
+
 ## Building
 
 ```
