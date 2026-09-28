@@ -117,8 +117,8 @@ categories:
       - go back to africa
       - go back to your country
     patterns:
-      - '\b(?:kill|gas|hang|lynch|burn|exterminate|shoot)\s+(?:all\s+)?(?:the\s+)?(?:jews|blacks|niggers|niggas|muslims|gays|fags|faggots|trannies|asians|mexicans|arabs|chinks)\b'
-      - '\b(?:all\s+)?(?:jews|niggers|niggas|faggots|fags|muslims)\s+(?:should|must|need\s+to|deserve\s+to)\s+(?:die|burn|hang|be\s+killed|be\s+gassed)\b'
+      - '\b(?:kill|gas|hang|lynch|burn|exterminate|shoot)\s*(?:all\s*)?(?:the\s*)?(?:jews|blacks|niggers|niggas|muslims|gays|fags|faggots|trannies|asians|mexicans|arabs|chinks)\b'
+      - '\b(?:all\s*)?(?:jews|niggers|niggas|faggots|fags|muslims)\s*(?:should|must|need\s*to|deserve\s*to)\s*(?:die|burn|hang|be\s*killed|be\s*gassed)\b'
 
   threats:
     enabled: true
@@ -126,7 +126,8 @@ categories:
     words:
       - kys
     patterns:
-      - '(?<!don''t )(?<!dont )(?<!do not )(?<!never )(?<!not )(?<!won''t )\b(?:go\s+)?(?:kill|hang|neck)\s+(?:your\s*self|ur\s*self|yourself|urself)\b'
+      - '(?<!don''t )(?<!dont )(?<!do not )(?<!never )(?<!not )(?<!won''t )\b(?:go\s*)?(?:kill|hang|neck)\s*(?:your\s*self|ur\s*self|yourself|urself)\b'
+      - '\bwhy\s*not\s*(?:go\s*)?(?:kill|hang|neck)\s*(?:your\s*self|ur\s*self|yourself|urself)\b'
       - '\b(?:i\s+)?hope\s+(?:you|u)\s+(?:die|get\s+cancer|get\s+aids|get\s+raped|burn\s+in\s+hell)\b'
       - '\bgo\s+commit\s+suicide\b'
       - '\bslit\s+your\s+wrists\b'
@@ -189,8 +190,21 @@ safe-words:
 
 # Phrases where a listed word means something else.
 safe-phrases:
-  - chink in
-  - chink of
+  - chink in the armor
+  - chink in the armour
+  - chink in his armor
+  - chink in his armour
+  - chink in her armor
+  - chink in her armour
+  - chink in my armor
+  - chink in my armour
+  - chink in your armor
+  - chink in your armour
+  - chink in our armor
+  - chink in our armour
+  - chink in their armor
+  - chink in their armour
+  - chink of light
   - maine coon
   - maine coons
   - coon rapids

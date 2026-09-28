@@ -17,7 +17,9 @@ public final class AdMatcher {
 
     private static final Pattern SCHEME_URL = Pattern.compile("(?:https?://|ftp://|www\\.)[^\\s<>\"']+");
     private static final Pattern IPV4 = Pattern.compile(
-            "(?<![\\d.])((?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})(?::(\\d{1,5}))?(?![\\d]|\\.\\d)");
+            "(?<!\\d)((?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})(?::(\\d{1,5}))?(?![\\d]|\\.\\d)");
+
+    private static final Pattern SPACED_DOT = Pattern.compile("(?<=[a-z0-9])\\s+\\.\\s+(?=[a-z0-9])");
 
     private final Set<String> allowed;
     private final boolean blockIps;
@@ -31,7 +33,7 @@ public final class AdMatcher {
         this.blockIps = blockIps;
         String tld = String.join("|", tlds.stream().map(t -> Pattern.quote(t.toLowerCase(Locale.ROOT))).toList());
         if (tld.isEmpty()) tld = "(?!)";
-        this.domain = Pattern.compile("(?<![a-z0-9@._-])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:" + tld + "))(?![a-z0-9-])(?::\\d{1,5})?(?:/[^\\s]*)?");
+        this.domain = Pattern.compile("(?<![a-z0-9])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:" + tld + "))(?![a-z0-9-])(?::\\d{1,5})?(?:/[^\\s]*)?");
         this.spacedDomain = Pattern.compile("(?<![a-z0-9])((?:[a-z0-9-]{2,}\\s*(?:\\(dot\\)|\\[dot\\]|\\{dot\\}|\\s+dot\\s+|\\sd0t\\s)\\s*)+)(?:" + tld + ")(?![a-z0-9-])");
         for (String p : phrasePatterns) {
             try {
@@ -51,7 +53,7 @@ public final class AdMatcher {
      * @param allowLinks the player may post links (they still cannot post an IP or use ad phrases)
      */
     public Verdict match(String cleaned, boolean allowLinks) {
-        String text = foldWords(cleaned);
+        String text = readDots(foldWords(cleaned));
 
         if (!allowLinks) {
             Matcher m = SCHEME_URL.matcher(text);
@@ -72,7 +74,7 @@ public final class AdMatcher {
         if (blockIps) {
             Matcher m = IPV4.matcher(text);
             while (m.find()) {
-                if (isVersionOrLocal(m.group(1))) continue;
+                if (isVersionOrLocal(m.group(1), m.group(2))) continue;
                 return new Verdict("advertising", "server address", m.group());
             }
         }
@@ -94,18 +96,22 @@ public final class AdMatcher {
     }
 
     static String hostOf(String url) {
-        String s = url.toLowerCase(Locale.ROOT);
+        String s = url.toLowerCase(Locale.ROOT).replace('\\', '/');
         int scheme = s.indexOf("://");
         if (scheme >= 0) s = s.substring(scheme + 3);
         int end = s.length();
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '/' || c == ':' || c == '?' || c == '#') {
+            if (c == '/' || c == '?' || c == '#') {
                 end = i;
                 break;
             }
         }
         s = s.substring(0, end);
+        // user:password@host: the host is what follows the last @
+        s = s.substring(s.lastIndexOf('@') + 1);
+        int port = s.indexOf(':');
+        if (port >= 0) s = s.substring(0, port);
         while (s.endsWith(".") || s.endsWith(",") || s.endsWith(")")) s = s.substring(0, s.length() - 1);
         return s;
     }
@@ -115,11 +121,20 @@ public final class AdMatcher {
         return labels.length >= 2 ? labels[labels.length - 2] : host;
     }
 
-    /** 127.x.x.x, 0.x.x.x and 1.<version>.x.x (a game version, 1.21.4.1) are not server addresses. */
-    private static boolean isVersionOrLocal(String ip) {
+    /** 127.x.x.x, 0.x.x.x and a game version like 1.21.4.1 (no port, every part small) are not server addresses. */
+    private static boolean isVersionOrLocal(String ip, String port) {
         String[] o = ip.split("\\.");
-        int a = Integer.parseInt(o[0]), b = Integer.parseInt(o[1]);
-        return a == 0 || a == 127 || (a == 1 && b <= 30);
+        int a = Integer.parseInt(o[0]);
+        if (a == 0 || a == 127) return true;
+        if (a != 1 || port != null) return false;
+        for (int i = 1; i < 4; i++) if (Integer.parseInt(o[i]) > 30) return false;
+        return true;
+    }
+
+    /** evil[.]com, evil(.)com, an ideographic full stop, and "play . evil . com" read as plain dots. */
+    private static String readDots(String text) {
+        return SPACED_DOT.matcher(text.replace("[.]", ".").replace("(.)", ".").replace("{.}", ".")
+                .replace('。', '.').replace('｡', '.')).replaceAll(".");
     }
 
     /** Look-alike letters folded word by word, so "exаmple.com" with a Cyrillic а is still seen. */

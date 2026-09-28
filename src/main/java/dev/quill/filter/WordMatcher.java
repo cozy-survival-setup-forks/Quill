@@ -3,7 +3,6 @@ package dev.quill.filter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +14,6 @@ import java.util.regex.Pattern;
 public final class WordMatcher {
 
     private static final String KEEP_AT_EDGES = "@$*#%";
-    private static final String SEPARATORS = "._-|/\\,~^:;·•‧∙⋅";
     private static final String WILDCARDS = "*#%?";
 
     private final Terms terms;
@@ -45,6 +43,19 @@ public final class WordMatcher {
             if (v != null) return v;
         }
 
+        // a word broken up by spaces: nig ger, fa ggot
+        for (int a = 0; a < tokens.size(); a++) {
+            StringBuilder joined = new StringBuilder(tokens.get(a));
+            boolean online = names.contains(tokens.get(a));
+            for (int b = a + 1; b < Math.min(tokens.size(), a + 3); b++) {
+                online |= names.contains(tokens.get(b));
+                joined.append(tokens.get(b));
+                if (online || joined.length() < 5 || joined.length() > 12) continue;
+                Verdict v = matchJoined(joined.toString(), skip);
+                if (v != null) return v;
+            }
+        }
+
         // letters typed one at a time: n i g g e r
         int i = 0;
         while (i < tokens.size()) {
@@ -61,14 +72,29 @@ public final class WordMatcher {
             i = Math.max(j, i + 1);
         }
 
-        // phrases and patterns, on the text with l33t undone
+        // phrases and patterns, on the text with l33t undone, once as typed and once with punctuation read as spaces
         String phrases = phraseText(tokens);
-        for (var entry : terms.patterns().entrySet()) {
-            if (skip.contains(entry.getKey())) continue;
-            for (Pattern p : entry.getValue()) {
-                Matcher m = p.matcher(phrases);
-                if (m.find()) return new Verdict(entry.getKey(), "phrase", m.group().trim());
+        for (String text2 : new String[]{phrases, phrases.replaceAll("[^\\p{L}\\p{N}']+", " ").trim()}) {
+            for (var entry : terms.patterns().entrySet()) {
+                if (skip.contains(entry.getKey())) continue;
+                for (Pattern p : entry.getValue()) {
+                    Matcher m = p.matcher(text2);
+                    if (m.find()) return new Verdict(entry.getKey(), "phrase", m.group().trim());
+                }
             }
+        }
+        return null;
+    }
+
+    /** Pieces of a word put back together: only an exact listed word counts. */
+    private Verdict matchJoined(String joined, Set<String> skip) {
+        String folded = Normalizer.fold(joined);
+        Set<String> forms = new LinkedHashSet<>();
+        forms.add(folded);
+        forms.addAll(Normalizer.leet(folded));
+        for (String form : forms) {
+            Terms.Ref ref = terms.exactOrStretched(form);
+            if (ref != null && !skip.contains(ref.category())) return new Verdict(ref.category(), "word: " + ref.word() + " (split up)", joined);
         }
         return null;
     }
@@ -102,20 +128,23 @@ public final class WordMatcher {
         String bare = token;
         while (bare.length() > 2 && bare.startsWith("*") && bare.endsWith("*")) bare = bare.substring(1, bare.length() - 1);
         candidates.add(bare);
-        // n.i.g.g.e.r, ni-gger, and every part of a word joined with dashes
+        // @nigga, #retard, %kike: a symbol in front is not part of the word ("@" would otherwise be read as an a)
+        int from = 0, to = bare.length();
+        while (from < to && KEEP_AT_EDGES.indexOf(bare.charAt(from)) >= 0) from++;
+        while (to > from && KEEP_AT_EDGES.indexOf(bare.charAt(to - 1)) >= 0) to--;
+        candidates.add(bare.substring(from, to));
+        // n.i.g.g.e.r, ni-gger, nigga's, and every part of a word joined with dashes
         for (String c : List.copyOf(candidates)) addSeparated(c, candidates);
 
         for (String c : candidates) {
-            if (c.isEmpty() || c.length() > 40) continue;
+            if (c.isEmpty() || c.length() > 200) continue;
             String folded = Normalizer.fold(c);
             Set<String> forms = new LinkedHashSet<>();
             forms.add(folded);
             forms.addAll(Normalizer.leet(folded));
-            Set<String> all = new LinkedHashSet<>();
-            for (String f : forms) all.addAll(Normalizer.squeeze(f));
 
-            for (String form : all) {
-                Terms.Ref ref = terms.exact(form);
+            for (String form : forms) {
+                Terms.Ref ref = terms.exactOrStretched(form);
                 if (ref != null && !skip.contains(ref.category())) return new Verdict(ref.category(), "word: " + ref.word(), token);
             }
             for (String form : forms) {
@@ -128,10 +157,15 @@ public final class WordMatcher {
         return null;
     }
 
+    /** Whatever sits between letters that is not a letter, a digit, a l33t symbol or a wildcard (a "|" counts as both). */
+    private static boolean isSeparator(char c) {
+        return c == '|' || !Character.isLetterOrDigit(c) && WILDCARDS.indexOf(c) < 0 && !Normalizer.isLeet(c);
+    }
+
     private void addSeparated(String token, Set<String> out) {
         boolean has = false;
         for (int i = 1; i < token.length() - 1; i++) {
-            if (SEPARATORS.indexOf(token.charAt(i)) >= 0) {
+            if (isSeparator(token.charAt(i))) {
                 has = true;
                 break;
             }
@@ -141,7 +175,7 @@ public final class WordMatcher {
         StringBuilder part = new StringBuilder();
         for (int i = 0; i < token.length(); i++) {
             char c = token.charAt(i);
-            if (SEPARATORS.indexOf(c) >= 0) {
+            if (isSeparator(c)) {
                 if (part.length() > 0) out.add(part.toString());
                 part.setLength(0);
             } else {
@@ -184,15 +218,5 @@ public final class WordMatcher {
             return new Verdict(ref.category(), "inside a word: " + ref.word(), token);
         }
         return null;
-    }
-
-    /** For tests and /quill filter test: the tokens as the matcher sees them. */
-    static List<String> tokensOf(String cleaned) {
-        List<String> out = new ArrayList<>();
-        for (String r : cleaned.trim().split("\\s+")) {
-            String t = strip(r);
-            if (!t.isEmpty()) out.add(t.toLowerCase(Locale.ROOT));
-        }
-        return out;
     }
 }

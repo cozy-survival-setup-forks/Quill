@@ -69,6 +69,47 @@ class FilterTest {
     }
 
     @Test
+    void wordsBrokenUpOrHidden() {
+        for (String t : new String[]{"nig ger", "n igger", "ni gger", "nigg a", "ni ggers", "nig'ger", "n'i'g'g'e'r", "n|gger",
+                "nigㅤger", "nig⠀ger", "nig⁦ger", "nig᠎ger", "nig󠀠ger", "пigger",
+                "nιgger", "ɴɪɢɢᴇʀ", "(n)(i)(g)(g)(e)(r)", "ni99er", "ni66a",
+                "niiiiiiiiiiiiiiiiiiiiiigger", "nniiggeerr", "@nigga", "#nigga", "*nigga", "nigga's", "nigga’s"}) {
+            stopped("racism", t);
+        }
+        stopped("homophobia", "fa ggot");
+        stopped("homophobia", "fag's");
+        stopped("ableism", "#retard");
+        stopped("ableism", "retard's");
+        for (String t : new String[]{"killyourself", "kill.yourself", "kill yourself", "why not kill yourself"}) stopped("threats", t);
+        for (String t : new String[]{"heilhitler", "heil_hitler", "heil-hitler", "heeeil hitler", "gas-the-jews", "heil hitIer"}) {
+            Verdict v = check(engine, t);
+            assertNotNull(v, "should be stopped: " + t);
+        }
+        // and the country and the harmless stay clean
+        allowed("Niger and Nigeria");
+        allowed("a nig of gold, a pen is mightier");
+        allowed("do not kill yourself, please");
+        allowed("why do you say that");
+        allowed("the chink in the armor and a chink of light");
+        stopped("racism", "shut up you chink of shit");
+    }
+
+    @Test
+    void advertisingInDisguise() {
+        for (String t : new String[]{"...play.evil.com", "@play.evil.com", "_play.evil.com", "-play.evil.com", "play . evil . com",
+                "evil[.]com", "evil(.)com", "evil｡com", "...203.0.113.5", "ip.203.0.113.5", "203 . 0 . 113 . 5", "1.20.113.5:25565",
+                "https://youtube.com:x@play.evil.com", "https://play.evil.de\\.youtube.com", "play.evil.de", "mc.evil.me", "play.evil.co"}) {
+            Verdict v = check(engine, t);
+            assertNotNull(v, "should be stopped: " + t);
+            assertEquals("advertising", v.category(), t);
+        }
+        allowed("thanks. me too");
+        allowed("well . okay then");
+        allowed("version 1.21.4.1");
+        allowed("10, 20, 30, 40");
+    }
+
+    @Test
     void hateAndThreats() {
         stopped("hate", "heil hitler");
         stopped("hate", "HEIL   HITLER");

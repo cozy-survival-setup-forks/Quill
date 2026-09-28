@@ -3,16 +3,14 @@ package dev.quill.filter;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Turns what a player typed into plain lowercase letters, undoing the usual tricks: accents, full-width and
- * mathematical letters, look-alike letters from other alphabets, zero-width characters, l33t and stretched letters.
- * Each step only offers candidates, the word lists decide what counts.
+ * mathematical letters, look-alike letters from other alphabets, invisible characters and l33t. Each step only
+ * offers candidates, the word lists decide what counts.
  */
 public final class Normalizer {
 
@@ -21,27 +19,34 @@ public final class Normalizer {
 
     static {
         String[] pairs = {"аa", "еe", "оo", "кk", "рp", "сc", "уy", "хx", "іi", "јj", "ѕs", "ԁd", "ɡg", "οo", "αa", "εe", "υu",
-                "κk", "νv", "ρp", "τt", "χx", "ıi", "ӏl", "һh", "ԛq", "ԝw"};
+                "κk", "νv", "ρp", "τt", "χx", "ıi", "ӏl", "һh", "ԛq", "ԝw", "пn", "ιi",
+                // small capitals, as text generators write them
+                "ᴀa", "ʙb", "ᴄc", "ᴅd", "ᴇe", "ɢg", "ʜh", "ɪi", "ᴊj", "ᴋk", "ʟl", "ᴍm", "ɴn", "ᴏo", "ᴘp", "ʀr", "ᴛt", "ᴜu", "ᴠv", "ᴡw", "ʏy", "ᴢz"};
         for (String p : pairs) LOOKALIKE.put(p.charAt(0), p.charAt(1));
-        String[] leet = {"0o", "3e", "4a", "5s", "7t", "8b", "@a", "$s", "!i", "+t", "¡i", "€e"};
+        String[] leet = {"0o", "3e", "4a", "5s", "7t", "8b", "@a", "$s", "!i", "+t", "¡i", "€e", "9g", "6g", "|i"};
         for (String p : leet) LEET.put(p.charAt(0), p.charAt(1));
     }
 
     private Normalizer() {
     }
 
-    /** Accents and marks removed, compatibility forms unfolded, zero-width characters dropped, lowercase. */
+    /** Accents and marks removed, compatibility forms unfolded, invisible characters dropped, lowercase. */
     public static String clean(String text) {
         String s = java.text.Normalizer.normalize(text, Form.NFKD);
         StringBuilder out = new StringBuilder(s.length());
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            int type = Character.getType(c);
-            if (type == Character.NON_SPACING_MARK || type == Character.ENCLOSING_MARK || type == Character.COMBINING_SPACING_MARK) continue;
-            if ((c >= 0x200B && c <= 0x200F) || (c >= 0x202A && c <= 0x202E) || c == 0x2060 || c == 0xFEFF || c == 0x00AD) continue;
-            out.append(c);
-        }
+        s.codePoints().forEach(cp -> {
+            if (!invisible(cp)) out.appendCodePoint(cp);
+        });
         return out.toString().toLowerCase(Locale.ROOT);
+    }
+
+    /** Marks, format characters (zero-width, bidi, tags) and the blank "letters" that draw nothing. */
+    private static boolean invisible(int cp) {
+        int type = Character.getType(cp);
+        if (type == Character.NON_SPACING_MARK || type == Character.ENCLOSING_MARK || type == Character.COMBINING_SPACING_MARK
+                || type == Character.FORMAT) return true;
+        return cp == 0x115F || cp == 0x1160 || cp == 0x3164 || cp == 0xFFA0 || cp == 0x2800 || cp == 0x180E
+                || (cp >= 0xE0000 && cp <= 0xE007F);
     }
 
     /** Look-alike letters to their latin twin, but only inside a word that already has latin letters (or is nothing but look-alikes). */
@@ -62,7 +67,7 @@ public final class Normalizer {
         return sb.toString();
     }
 
-    public static boolean isLeet(char c) {
+    static boolean isLeet(char c) {
         return LEET.containsKey(c) || c == '1';
     }
 
@@ -85,41 +90,6 @@ public final class Normalizer {
             String s = sb.toString();
             if (!out.contains(s)) out.add(s);
         }
-        return out;
-    }
-
-    /**
-     * Stretched letters: every run of a repeated letter can be one, two or its own length long, so "niiigger" and
-     * "fuuuck" come back to a word. A word typed with fewer letters than the list has ("niger") is never made longer.
-     */
-    public static Set<String> squeeze(String token) {
-        Set<String> out = new LinkedHashSet<>();
-        out.add(token);
-        if (token.length() > 24) return out;
-        List<int[]> runs = new ArrayList<>();
-        for (int i = 0; i < token.length(); ) {
-            int j = i;
-            while (j < token.length() && token.charAt(j) == token.charAt(i)) j++;
-            if (j - i >= 2 && Character.isLetter(token.charAt(i))) runs.add(new int[]{i, j - i});
-            i = j;
-        }
-        if (runs.isEmpty()) return out;
-        if (runs.size() > 4) runs = runs.subList(0, 4);
-        List<String> current = List.of(token);
-        // rebuild from the last run to the first so earlier offsets stay valid
-        for (int r = runs.size() - 1; r >= 0; r--) {
-            int start = runs.get(r)[0], len = runs.get(r)[1];
-            List<String> next = new ArrayList<>();
-            for (String base : current) {
-                next.add(base);
-                for (int want = 1; want <= 2; want++) {
-                    if (want == len) continue;
-                    next.add(base.substring(0, start) + String.valueOf(base.charAt(start)).repeat(want) + base.substring(start + len));
-                }
-            }
-            current = next;
-        }
-        out.addAll(current);
         return out;
     }
 }
