@@ -1,5 +1,7 @@
 package dev.quill.chat;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -52,6 +54,33 @@ public final class Snapshots {
         return id;
     }
 
+    // Inventory window (6 rows): row 0 helmet, chestplate, leggings, boots, off hand (then spare slots), rows 1-3 the
+    // bag, row 4 a divider, row 5 the hotbar.
+    static final int OFFHAND_SLOT = 4;
+
+    /** Window slot for a {@code getArmorContents()} index (0 boots .. 3 helmet): helmet first. */
+    static int armorSlot(int armorIndex) {
+        return 3 - armorIndex;
+    }
+
+    /** Window slot for a {@code getStorageContents()} index (0-8 hotbar, 9-35 bag). */
+    static int storageSlot(int index) {
+        return index < 9 ? 45 + index : index;
+    }
+
+    /** Slots that hold no item: the spare ones beside the off hand and the divider row. */
+    static boolean isFiller(int slot) {
+        return (slot >= 5 && slot <= 8) || (slot >= 36 && slot <= 44);
+    }
+
+    /** A pane with no name and no tooltip. */
+    private static ItemStack filler() {
+        ItemStack pane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        pane.editMeta(meta -> meta.displayName(Component.empty()));
+        pane.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true).build());
+        return pane;
+    }
+
     private static ItemStack[] copy(ItemStack[] items) {
         ItemStack[] out = new ItemStack[items.length];
         for (int i = 0; i < items.length; i++) out[i] = items[i] == null ? null : items[i].clone();
@@ -77,17 +106,11 @@ public final class Snapshots {
             for (int i = 0; i < 27 && i < s.items.length; i++) view.setItem(i, s.items[i]);
         } else {
             view = Bukkit.createInventory(holder, 54, title);
-            // armor and off hand on top, the bag below it, the hotbar last
-            for (int i = 0; i < s.armor.length && i < 4; i++) view.setItem(3 - i, s.armor[i]);
-            view.setItem(4, s.offhand);
-            for (int i = 9; i < 36 && i < s.items.length; i++) view.setItem(i, s.items[i]);
-            for (int i = 0; i < 9 && i < s.items.length; i++) view.setItem(36 + i, s.items[i]);
-            ItemStack pane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-            var meta = pane.getItemMeta();
-            meta.displayName(Component.empty());
-            pane.setItemMeta(meta);
-            for (int i = 5; i < 9; i++) view.setItem(i, pane);
-            for (int i = 45; i < 54; i++) view.setItem(i, pane);
+            ItemStack pane = filler();
+            for (int slot = 0; slot < 54; slot++) if (isFiller(slot)) view.setItem(slot, pane.clone());
+            for (int i = 0; i < s.armor.length && i < 4; i++) view.setItem(armorSlot(i), s.armor[i]);
+            view.setItem(OFFHAND_SLOT, s.offhand);
+            for (int i = 0; i < 36 && i < s.items.length; i++) view.setItem(storageSlot(i), s.items[i]);
         }
         holder.inventory = view;
         viewer.openInventory(view);

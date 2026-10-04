@@ -11,7 +11,9 @@ to stop the real thing and nothing else. Private messages, ignoring and muting a
 - **Formats.** MiniMessage, one per permission and weight, separate local and global formats. Name, prefix and suffix
   come from placeholders, so LuckPerms prefixes and Spectrum name gradients just work. Hover and click on the name.
 - **Extras.** `[item]` shows the item in hand with its real hover, `[inv]` and `[ender]` open a read-only copy,
-  `@name` highlights and pings a player, links that passed the filter are clickable.
+  `@name` highlights and pings a player, links that passed the filter are clickable. The inventory copy has the
+  armor and off hand on the top row, the bag in the three rows below, then a divider row and the hotbar on the
+  last row; unused slots are nameless, tooltip-less panes, and nothing in the window can be taken or moved.
 - **Staff chat.** `/staffchat <message>`, `/staffchat` to stay in it, or start a message with `#`.
 - **Controls.** `/chattoggle` hides public chat for yourself, `/quill mutechat` and `/quill clearchat` for staff.
 - **Announcements.** A timed list, off by default.
