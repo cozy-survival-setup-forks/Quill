@@ -1,3 +1,4 @@
+lang-version: 1
 # Quill messages.yml
 # MiniMessage, and & codes work. <placeholders> are filled in. An empty message is not sent, so any can be turned off.
 

@@ -21,7 +21,7 @@ import java.util.Set;
 /** /quill: the admin tools, and the "view" that the [inv] links in chat run. */
 public final class QuillCommand implements CommandExecutor, TabCompleter {
 
-    private static final List<String> SUBS = List.of("reload", "spy", "local", "mutechat", "clearchat", "filter", "warnings", "clearwarnings");
+    private static final List<String> SUBS = List.of("reload", "spy", "local", "mutechat", "clearchat", "filter", "warnings", "clearwarnings", "doctor", "backup");
 
     private final QuillPlugin plugin;
 
@@ -46,6 +46,13 @@ public final class QuillCommand implements CommandExecutor, TabCompleter {
         }
         switch (sub) {
             case "reload" -> plugin.lang().send(sender, plugin.reloadAll() ? "reloaded" : "reload-failed");
+            case "doctor" -> plugin.doctor().forEach(sender::sendPlainMessage);
+            case "backup" -> {
+                if (args.length < 2 || !args[1].equalsIgnoreCase("now"))
+                    sender.sendPlainMessage("Use /quill backup now");
+                else
+                    sender.sendPlainMessage(plugin.backupNow() ? "Backup made and checked." : "The backup FAILED, see the console.");
+            }
             case "spy" -> {
                 if (!(sender instanceof Player p)) {
                     plugin.lang().send(sender, "players-only");

@@ -13,6 +13,13 @@ import dev.quill.filter.Spam;
 import dev.quill.filter.Warnings;
 import dev.quill.hook.Hooks;
 import dev.quill.hook.QuillExpansion;
+import dev.quill.safe.ConfigMigrator;
+import dev.quill.safe.Doctor;
+import dev.quill.safe.FileBackups;
+import dev.quill.safe.Guard;
+import dev.quill.safe.Health;
+import dev.quill.safe.Prep;
+import dev.quill.safe.ServerId;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -23,6 +30,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -30,6 +39,13 @@ import java.util.logging.Level;
  * that is built to stop the real thing and nothing else.
  */
 public final class QuillPlugin extends JavaPlugin {
+
+    private static final int CONFIG_VERSION = 1;
+    private static final int LANG_VERSION = 1;
+
+    private final List<Prep.Spec> files = List.of(
+            new Prep.Spec("config.yml", "config-version", CONFIG_VERSION, Prep.configMigrator(CONFIG_VERSION), null),
+            new Prep.Spec("messages.yml", "lang-version", LANG_VERSION, new ConfigMigrator("lang-version", LANG_VERSION), null));
 
     private final Hooks hooks = new Hooks();
     private final ChatState state = new ChatState();
@@ -58,6 +74,8 @@ public final class QuillPlugin extends JavaPlugin {
         for (String name : new String[]{"filter.yml", "terms.yml"}) {
             if (!new File(getDataFolder(), name).exists()) saveResource(name, false);
         }
+        Health.storage("YAML files in the plugin folder (config.yml, messages.yml, filter.yml, terms.yml, warnings.yml)");
+        Prep.startup(this, files);
         lang = new Lang(this);
         warnings = new Warnings(new File(getDataFolder(), "warnings.yml"), getLogger());
         warnings.load();
@@ -78,7 +96,18 @@ public final class QuillPlugin extends JavaPlugin {
             expansion.register();
         }
         getLogger().info("Quill ready: " + engine.terms().wordCount() + " filtered words, local radius " + (int) settings.radius + ".");
-        Metrics.start(this);
+        boolean beacon = getConfig().getBoolean("metrics.enabled", true);
+        Metrics.start(this, ServerId.resolve(getDataFolder().toPath(), new ServerId.Slot() {
+            @Override
+            public String read() {
+                return warnings.serverId();
+            }
+
+            @Override
+            public void write(String id) {
+                warnings.serverId(id);
+            }
+        }, beacon, getLogger()));
         Banner.print(this, "Thanks for keeping every conversation clean and cozy.");
     }
 
@@ -105,6 +134,14 @@ public final class QuillPlugin extends JavaPlugin {
      */
     public boolean reloadAll() {
         boolean first = engine == null;
+        if (!first) {
+            List<Guard.Problem> problems = Prep.validate(this, files);
+            if (!problems.isEmpty()) {
+                Prep.logRejected(this, problems);
+                lang.load();
+                return false;
+            }
+        }
         YamlConfiguration config = parse("config.yml");
         YamlConfiguration filter = parse("filter.yml");
         YamlConfiguration terms = parse("terms.yml");
@@ -152,6 +189,23 @@ public final class QuillPlugin extends JavaPlugin {
         var stream = getResource(name);
         return stream == null ? new YamlConfiguration()
                 : YamlConfiguration.loadConfiguration(new InputStreamReader(stream, StandardCharsets.UTF_8));
+    }
+
+    /** The text of /quill doctor. */
+    public List<String> doctor() {
+        List<String> extra = new ArrayList<>(Prep.versionLines(this, files));
+        extra.add("Pending writes: warnings are written about every 30 seconds and when the server stops");
+        return Doctor.report(getName(), getPluginMeta().getVersion(), extra);
+    }
+
+    /** /quill backup now: a verified copy of the settings and data files. */
+    public boolean backupNow() {
+        warnings.save();
+        List<String> names = new ArrayList<>(Prep.fileNames(files));
+        names.add("filter.yml");
+        names.add("terms.yml");
+        names.add("warnings.yml");
+        return FileBackups.snapshot(getDataFolder().toPath(), names, 5, getLogger());
     }
 
     public Settings settings() {

@@ -1,3 +1,4 @@
+config-version: 1
 # Quill config.yml
 # Texts use MiniMessage (<red>text</red>), and the old & codes work too. The filter is in filter.yml and terms.yml,
 # the messages players and staff see are in messages.yml.
@@ -88,4 +89,3 @@ announcements:
 
 metrics:
   enabled: true
-  interval-minutes: 45

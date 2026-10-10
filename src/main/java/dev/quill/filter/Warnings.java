@@ -1,5 +1,7 @@
 package dev.quill.filter;
 
+import dev.quill.safe.Health;
+import dev.quill.safe.SafeIo;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -20,6 +22,8 @@ public final class Warnings {
     private final Map<UUID, Record> records = new ConcurrentHashMap<>();
     private volatile long decayMs = 60 * 60_000L;
     private volatile boolean dirty;
+    /** The id of the usage beacon lives in this file, next to the warnings. */
+    private volatile String serverId;
 
     public Warnings(File file, Logger log) {
         this.file = file;
@@ -33,7 +37,9 @@ public final class Warnings {
     public void load() {
         records.clear();
         if (!file.exists()) return;
-        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+        // warnings fade within the hour: if the file is lost it is better to start without them than to stop chat
+        YamlConfiguration yaml = SafeIo.loadYaml(file.toPath(), SafeIo.Policy.SETTINGS, log).yaml;
+        serverId = yaml.getString("server-id");
         for (String key : yaml.getKeys(false)) {
             try {
                 records.put(UUID.fromString(key), new Record(yaml.getInt(key + ".count"), yaml.getLong(key + ".last")));
@@ -66,6 +72,7 @@ public final class Warnings {
         dirty = false;
         YamlConfiguration yaml = new YamlConfiguration();
         long now = System.currentTimeMillis();
+        if (serverId != null) yaml.set("server-id", serverId);
         records.forEach((id, r) -> {
             if (now - r.last <= decayMs) {
                 yaml.set(id + ".count", r.count);
@@ -73,9 +80,23 @@ public final class Warnings {
             }
         });
         try {
-            yaml.save(file);
+            SafeIo.writeYaml(file.toPath(), yaml.saveToString());
         } catch (IOException e) {
+            dirty = true; // try again at the next save
             log.warning("Could not save warnings.yml: " + e.getMessage());
+            Health.failure("warnings.yml could not be saved: " + e.getMessage());
         }
+    }
+
+    public String serverId() {
+        return serverId;
+    }
+
+    /** Stores the beacon id and writes the file at once. */
+    public synchronized void serverId(String id) {
+        this.serverId = id;
+        dirty = true;
+        save();
+        if (dirty) throw new IllegalStateException("warnings.yml could not be written");
     }
 }
